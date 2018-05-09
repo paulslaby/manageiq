@@ -86,11 +86,11 @@ module ManageIQ::Providers
     end
 
     def servers
-      @servers ||= @connection.handled_list(:servers, {}, ::Settings.ems.ems_openstack.refresh.is_admin)
+      @servers ||= uniques(@connection.handled_list(:servers, {}, ::Settings.ems.ems_openstack.refresh.is_admin))
     end
 
     def vnfs
-      @vnfs ||= @nfv_service.handled_list(:vnfs, {}, ::Settings.ems.ems_openstack.refresh.is_admin)
+      @vnfs ||= uniques(@nfv_service.handled_list(:vnfs, {}, ::Settings.ems.ems_openstack.refresh.is_admin))
     end
 
     def availability_zones_compute
@@ -108,7 +108,7 @@ module ManageIQ::Providers
     def volumes
       # TODO: support volumes through :nova as well?
       return [] unless @volume_service.name == :cinder
-      @volumes ||= @volume_service.handled_list(:volumes)
+      @volumes ||= uniques(@volume_service.handled_list(:volumes))
     end
 
     def get_availability_zones
@@ -137,7 +137,7 @@ module ManageIQ::Providers
     end
 
     def get_key_pairs
-      kps = @connection.handled_list(:key_pairs, {}, ::Settings.ems.ems_openstack.refresh.is_admin)
+      kps = uniques(@connection.handled_list(:key_pairs, {}, ::Settings.ems.ems_openstack.refresh.is_admin))
       process_collection(kps, :key_pairs) { |kp| parse_key_pair(kp) }
     end
 
@@ -148,8 +148,8 @@ module ManageIQ::Providers
 
     def get_vnfds
       return unless @nfv_service
-
-      process_collection(@nfv_service.handled_list(:vnfds, {}, ::Settings.ems.ems_openstack.refresh.is_admin), :orchestration_templates_catalog) { |vnfd| parse_vnfd(vnfd) }
+      vnfds = uniques(@nfv_service.handled_list(:vnfds, {}, ::Settings.ems.ems_openstack.refresh.is_admin))
+      process_collection(vnfds, :orchestration_templates_catalog) { |vnfd| parse_vnfd(vnfd) }
     end
 
     def get_vnfs
@@ -307,6 +307,7 @@ module ManageIQ::Providers
       end
 
       parent_image_uid = server.image["id"]
+      parent_image = @data_index.fetch_path(:vms, parent_image_uid)
 
       new_result = {
         :type                => "ManageIQ::Providers::Openstack::CloudManager::Vm",
@@ -348,6 +349,18 @@ module ManageIQ::Providers
 
       disks = new_result[:hardware][:disks]
       dev = "vda"
+
+      if parent_image
+        guest_os = parent_image.fetch_path(:hardware, :guest_os)
+        os_distro = parent_image.fetch_path(:operating_system, :distribution)
+        os_version = parent_image.fetch_path(:operating_system, :version)
+        new_result.store_path(:operating_system, :distribution, os_distro)
+        new_result.store_path(:operating_system, :version, os_version)
+      else
+        guest_os = "unknown"
+      end
+      new_result.store_path(:hardware, :guest_os, guest_os)
+      new_result.store_path(:operating_system, :product_name, guest_os)
 
       if flavor
         if (sz = flavor[:root_disk_size]) == 0

@@ -34,6 +34,22 @@ describe "Service Dialogs API" do
       expect(response).to have_http_status(:ok)
     end
 
+    it "allows read of service dialogs with the service catalog provision role" do
+      api_basic_authorize("svc_catalog_provision")
+
+      run_get service_dialogs_url
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "allows read of a single service dialog with the service catalog provision role" do
+      api_basic_authorize("svc_catalog_provision")
+
+      run_get service_dialogs_url(dialog1.id)
+
+      expect(response).to have_http_status(:ok)
+    end
+
     it "query with expanded resources to include content" do
       api_basic_authorize collection_action_identifier(:service_dialogs, :read, :get)
       run_get service_dialogs_url, :expand => "resources"
@@ -152,6 +168,84 @@ describe "Service Dialogs API" do
         end.to change(dialog, :content)
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body).to include(expected)
+      end
+
+      context 'using call with :content key' do
+        it 'POST /api/service_dialogs/:id updates a service dialog' do
+          api_basic_authorize collection_action_identifier(:service_dialogs, :edit)
+          dialog_tab = dialog.dialog_tabs.first
+          dialog_group = dialog_tab.dialog_groups.first
+          dialog_field = dialog_group.dialog_fields.first
+
+          updated_dialog = {
+            'label'   => 'updated label',
+            'content' => {
+              'dialog_tabs' => [
+                'id'            => dialog_tab.id.to_s,
+                'label'         => 'updated tab label',
+                'dialog_groups' => [
+                  {
+                    'id'            => dialog_group.id.to_s,
+                    'dialog_fields' => [
+                      { 'id' => dialog_field.id.to_s }
+                    ]
+                  }
+                ]
+              ]
+            }
+          }
+
+          expected = {
+            'href'  => a_string_including(service_dialogs_url(dialog.id)),
+            'id'    => dialog.id,
+            'label' => 'updated label'
+          }
+
+          expect do
+            run_post(service_dialogs_url(dialog.id), gen_request(:edit, updated_dialog))
+            dialog.reload
+          end.to change(dialog, :content)
+          expect(response).to have_http_status(:ok)
+          expect(response.parsed_body).to include(expected)
+        end
+      end
+
+      context 'using call without :content key' do
+        it 'POST /api/service_dialogs/:id updates a service dialog' do
+          api_basic_authorize collection_action_identifier(:service_dialogs, :edit)
+          dialog_tab = dialog.dialog_tabs.first
+          dialog_group = dialog_tab.dialog_groups.first
+          dialog_field = dialog_group.dialog_fields.first
+
+          updated_dialog = {
+            'label'       => 'updated label',
+            'dialog_tabs' => [
+              'id'            => dialog_tab.id.to_s,
+              'label'         => 'updated tab label',
+              'dialog_groups' => [
+                {
+                  'id'            => dialog_group.id.to_s,
+                  'dialog_fields' => [
+                    { 'id' => dialog_field.id.to_s }
+                  ]
+                }
+              ]
+            ]
+          }
+
+          expected = {
+            'href'  => a_string_including(service_dialogs_url(dialog.id)),
+            'id'    => dialog.id,
+            'label' => 'updated label'
+          }
+
+          expect do
+            run_post(service_dialogs_url(dialog.id), gen_request(:edit, updated_dialog))
+            dialog.reload
+          end.to change(dialog, :content)
+          expect(response).to have_http_status(:ok)
+          expect(response.parsed_body).to include(expected)
+        end
       end
 
       it 'POST /api/service_dialogs updates multiple service dialog' do

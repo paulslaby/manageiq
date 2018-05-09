@@ -81,7 +81,7 @@ module Openstack
       expect(Disk.count).to                              eq disks_count
       expect(Hardware.count).to                          eq vms_count + images_count
       expect(Vm.count).to                                eq vms_count
-      expect(OperatingSystem.count).to                   eq 0
+      expect(OperatingSystem.count).to                   eq vms_count + images_count
       expect(Snapshot.count).to                          eq 0
       expect(SystemService.count).to                     eq 0
       expect(GuestDevice.count).to                       eq 0
@@ -253,7 +253,7 @@ module Openstack
       # TODO(lsmola) 2 networks per each floatingip assigned, it's kinda weird now, will replace with
       # neutron models, then the number of networks will fit the number of neutron networks
       # expect(Network.count).to           eq vms_count * 2
-      expect(OperatingSystem.count).to                   eq 0
+      expect(OperatingSystem.count).to                   eq vms_count + images_count
       expect(Snapshot.count).to                          eq 0
       expect(SystemService.count).to                     eq 0
       expect(GuestDevice.count).to                       eq 0
@@ -486,9 +486,9 @@ module Openstack
 
         if network.external_facing?
           vms = network.private_networks.map { |x| (network_vms(x) + network_stacks(x)) }.flatten.uniq
-          expect(network.vms.count).to eq vms.count
+          expect(network.public_network_vms.count).to eq vms.count
 
-          non_stack_vms          = network.vms.select { |x| x.orchestration_stack.blank? }
+          non_stack_vms          = network.public_network_vms.select { |x| x.orchestration_stack.blank? }
           non_stack_expected_vms = network.private_networks.map { |x| (network_vms(x)) }.flatten.uniq
           expect(non_stack_vms.map(&:name)).to match_array(non_stack_expected_vms.map { |x| x[:name] })
         else
@@ -516,20 +516,25 @@ module Openstack
         expect(network.ext_management_system).to be_kind_of(ManageIQ::Providers::Openstack::NetworkManager)
         expect(network.cloud_subnets.count).to   be > 0
         expect(network.cloud_subnets.first).to   be_kind_of(ManageIQ::Providers::Openstack::NetworkManager::CloudSubnet)
-        expect(network.vms.count).to             be > 0
-        expect(network.vms.first).to             be_kind_of(ManageIQ::Providers::Openstack::CloudManager::Vm)
-        expect(network.network_routers.count).to be > 0
-        expect(network.network_routers.first).to be_kind_of(ManageIQ::Providers::Openstack::NetworkManager::NetworkRouter)
+
         if network.external_facing?
           # It's a public network
+          expect(network.public_network_vms.count).to be > 0
+          expect(network.public_network_vms.first).to be_kind_of(ManageIQ::Providers::Openstack::CloudManager::Vm)
+          expect(network.public_network_routers.count).to be > 0
+          expect(network.public_network_routers.first).to be_kind_of(ManageIQ::Providers::Openstack::NetworkManager::NetworkRouter)
           expect(network).to be_kind_of(ManageIQ::Providers::Openstack::NetworkManager::CloudNetwork::Public)
           expect(network.private_networks.count).to be > 0
           expect(network.floating_ips.count).to     be > 0
           expect(network.private_networks.first).to be_kind_of(ManageIQ::Providers::Openstack::NetworkManager::CloudNetwork::Private)
 
-          assert_objects_with_hashes(network.network_routers, network_data.routers(network.name))
+          assert_objects_with_hashes(network.public_network_routers, network_data.routers(network.name))
         else
           # It's a private network
+          expect(network.vms.count).to be > 0
+          expect(network.vms.first).to be_kind_of(ManageIQ::Providers::Openstack::CloudManager::Vm)
+          expect(network.network_routers.count).to be > 0
+          expect(network.network_routers.first).to be_kind_of(ManageIQ::Providers::Openstack::NetworkManager::NetworkRouter)
           expect(network).to be_kind_of(ManageIQ::Providers::Openstack::NetworkManager::CloudNetwork::Private)
           expect(network.public_networks.count).to be > 0
           expect(network.public_networks.first).to be_kind_of(ManageIQ::Providers::Openstack::NetworkManager::CloudNetwork::Public)
@@ -652,7 +657,7 @@ module Openstack
         expect(template.ems_ref).to be_guid
 
         expect(template.ext_management_system).to  eq @ems
-        expect(template.operating_system).to       be_nil # TODO: This should probably not be nil
+        expect(template.operating_system).not_to   be_nil
         expect(template.custom_attributes.size).to eq 0
         expect(template.snapshots.size).to         eq 0
         expect(template.hardware).not_to           be_nil
@@ -733,7 +738,7 @@ module Openstack
       expect(vm.flavor.name).to            eq vm_expected[:__flavor_name]
       expect(vm.key_pairs.map(&:name)).to  eq [vm_expected[:key_name]]
       expect(vm.genealogy_parent.name).to  eq vm_expected[:__image_name]
-      expect(vm.operating_system).to       be_nil # TODO: This should probably not be nil
+      expect(vm.operating_system).not_to   be_nil
       expect(vm.custom_attributes.size).to eq 0
       expect(vm.snapshots.size).to         eq 0
 

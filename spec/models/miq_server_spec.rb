@@ -12,6 +12,13 @@ describe MiqServer do
     described_class.invoke_at_startups
   end
 
+  context "#hostname" do
+    it("with a valid hostname")    { expect(MiqServer.new(:hostname => "test").hostname).to eq("test") }
+    it("with a valid fqdn")        { expect(MiqServer.new(:hostname => "test.example.com").hostname).to eq("test.example.com") }
+    it("with an invalid hostname") { expect(MiqServer.new(:hostname => "test_host").hostname).to be_nil }
+    it("without a hostname")       { expect(MiqServer.new.hostname).to be_nil }
+  end
+
   context ".my_guid" do
     let(:guid_file) { Rails.root.join("GUID") }
 
@@ -43,6 +50,30 @@ describe MiqServer do
   context "instance" do
     before do
       @guid, @miq_server, @zone = EvmSpecHelper.create_guid_miq_server_zone
+    end
+
+    describe "#monitor_myself" do
+      it "does not exit with nil memory_usage" do
+        @miq_server.update(:memory_usage => nil)
+        expect(@miq_server).to receive(:exit).never
+        @miq_server.monitor_myself
+        expect(Notification.count).to eq(0)
+      end
+
+      it "creates a notification and exits with memory usage > limit" do
+        NotificationType.seed
+        @miq_server.update(:memory_usage => 3.gigabytes)
+        expect(@miq_server).to receive(:exit).once
+        @miq_server.monitor_myself
+        expect(Notification.count).to eq(1)
+      end
+
+      it "does not exit with memory_usage < limit" do
+        @miq_server.update(:memory_usage => 1.gigabyte)
+        expect(@miq_server).to receive(:exit).never
+        @miq_server.monitor_myself
+        expect(Notification.count).to eq(0)
+      end
     end
 
     it "should have proper guid" do

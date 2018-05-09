@@ -1262,10 +1262,14 @@
     :collection_actions:
       :get:
       - :name: read
-        :identifier: ems_infra_show_list
+        :identifier:
+        - ems_infra_show_list
+        - ems_block_storage_show_list
       :post:
       - :name: query
-        :identifier: ems_infra_show_list
+        :identifier:
+        - ems_infra_show_list
+        - ems_block_storage_show_list
       - :name: create
         :identifier: ems_infra_new
       - :name: edit
@@ -1277,7 +1281,9 @@
     :resource_actions:
       :get:
       - :name: read
-        :identifier: ems_infra_show
+        :identifier:
+        - ems_infra_show
+        - ems_block_storage_show
       :post:
       - :name: edit
         :identifier: ems_infra_edit
@@ -1731,10 +1737,14 @@
     :collection_actions:
       :get:
       - :name: read
-        :identifier: miq_ae_customization_explorer
+        :identifier:
+        - miq_ae_customization_explorer
+        - svc_catalog_provision
       :post:
       - :name: query
-        :identifier: miq_ae_customization_explorer
+        :identifier:
+        - miq_ae_customization_explorer
+        - svc_catalog_provision
       - :name: refresh_dialog_fields
         :identifier: svc_catalog_provision
       - :name: delete
@@ -1748,7 +1758,9 @@
     :resource_actions:
       :get:
       - :name: read
-        :identifier: miq_ae_customization_explorer
+        :identifier:
+        - miq_ae_customization_explorer
+        - svc_catalog_provision
       :post:
       - :name: refresh_dialog_fields
         :identifier: svc_catalog_provision
@@ -2237,12 +2249,27 @@
     :quotas_subcollection_actions:
       :get:
       - :name: read
-        :identifier: rbac_tenant_manage_quotas
+        :identifier: rbac_tenant_view
       :post:
       - :name: create
         :identifier: rbac_tenant_manage_quotas
       - :name: edit
         :identifier: rbac_tenant_manage_quotas
+      - :name: delete
+        :identifier: rbac_tenant_manage_quotas
+    :quotas_subresource_actions:
+      :get:
+      - :name: read
+        :identifier: rbac_tenant_view
+      :post:
+      - :name: edit
+        :identifier: rbac_tenant_manage_quotas
+      - :name: delete
+        :identifier: rbac_tenant_manage_quotas
+      :put:
+      - :name: edit
+        :identifier: rbac_tenant_manage_quotas
+      :delete:
       - :name: delete
         :identifier: rbac_tenant_manage_quotas
   :users:

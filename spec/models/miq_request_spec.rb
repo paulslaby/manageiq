@@ -282,6 +282,12 @@ describe MiqRequest do
 
   context '#post_create_request_tasks' do
     context 'VM provisioning' do
+      before do
+        ae_workspace = double("ae_workspace")
+        allow(ae_workspace).to receive(:root).and_return("test_vm")
+        allow(MiqAeEngine).to receive(:resolve_automation_object).and_return(ae_workspace)
+      end
+
       let(:description) { 'my original information' }
       let(:template)    { FactoryGirl.create(:template_vmware, :ext_management_system => FactoryGirl.create(:ems_vmware_with_authentication)) }
       let(:request)     { FactoryGirl.build(:miq_provision_request, :requester => fred, :description => description, :src_vm_id => template.id).tap(&:valid?) }
@@ -318,6 +324,12 @@ describe MiqRequest do
         expect(request.attributes.keys & removable_keys).to match_array removable_keys
         cleaned_attribs = request.send(:clean_up_keys_for_request_task)
         expect(cleaned_attribs).to_not match_array(removable_keys)
+      end
+
+      it '#clean_up_keys_for_request_task removes options user_message' do
+        request.update_attributes!(:options => {:user_message => 'doesntmatter'})
+        cleaned_attribs = request.send(:clean_up_keys_for_request_task)
+        expect(cleaned_attribs["options"]).to_not include(:user_message)
       end
     end
 
@@ -369,6 +381,9 @@ describe MiqRequest do
 
     before do
       allow(MiqRegion).to receive(:my_region).and_return(FactoryGirl.create(:miq_region))
+      ae_workspace = double("ae_workspace")
+      allow(ae_workspace).to receive(:root).and_return("test_vm")
+      allow(MiqAeEngine).to receive(:resolve_automation_object).and_return(ae_workspace)
 
       @options = {
         :src_vm_id     => template.id,

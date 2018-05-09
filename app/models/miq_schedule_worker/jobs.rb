@@ -49,11 +49,11 @@ class MiqScheduleWorker::Jobs
   end
 
   def host_authentication_check_schedule
-    queue_work_on_each_zone(:class_name  => "Host", :method_name => "authentication_check_schedule")
+    queue_work_on_each_zone(:class_name  => "Host", :method_name => "authentication_check_schedule", :priority => MiqQueue::HIGH_PRIORITY)
   end
 
   def ems_authentication_check_schedule
-    queue_work_on_each_zone(:class_name  => "ExtManagementSystem", :method_name => "authentication_check_schedule")
+    queue_work_on_each_zone(:class_name  => "ExtManagementSystem", :method_name => "authentication_check_schedule", :priority => MiqQueue::HIGH_PRIORITY)
   end
 
   def storage_authentication_check_schedule
@@ -111,6 +111,10 @@ class MiqScheduleWorker::Jobs
 
   def event_stream_purge_timer
     queue_work(:class_name => "EventStream", :method_name => "purge_timer", :zone => nil)
+  end
+
+  def notification_purge_timer
+    queue_work(:class_name => "Notification", :method_name => "purge_timer", :zone => nil)
   end
 
   def policy_event_purge_timer

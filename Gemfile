@@ -43,7 +43,7 @@ gem "aws-sdk",                        "~>2",           :require => false
 gem "bundler",                        ">=1.11.1",      :require => false
 gem "color",                          "~>1.8"
 gem "config",                         "~>1.3.0",       :require => false
-gem "dalli",                          "~>2.7.4",       :require => false
+gem "dalli",                          "=2.7.6",        :require => false
 gem "default_value_for",              "~>3.0.2"
 gem "elif",                           "=0.1.0",        :require => false
 gem "fast_gettext",                   "~>1.2.0"
@@ -57,9 +57,10 @@ gem "high_voltage",                   "~>3.0.0"
 gem "htauth",                         "2.0.0",         :require => false
 gem "inifile",                        "~>3.0",         :require => false
 gem "jbuilder",                       "~>2.5.0" # For the REST API
-gem "manageiq-api-client",            "~>0.1.0",       :require => false
+gem "linux_admin",                    "~>1.0.1",       :require => false
+gem "manageiq-api-client",            "~>0.3.0",       :require => false
 gem "mime-types",                     "~>2.6.1",       :require => "mime/types/columnar"
-gem "more_core_extensions",           "~>3.2"
+gem "more_core_extensions",           "~>3.5"
 gem "nakayoshi_fork",                 "~>0.0.3"  # provides a more CoW friendly fork (GC a few times before fork)
 gem "net-ldap",                       "~>0.14.0",      :require => false
 gem "net-ping",                       "~>1.7.4",       :require => false
@@ -70,8 +71,8 @@ gem "omniauth",                       "~>1.3.1",       :require => false
 gem "omniauth-google-oauth2",         "~>0.2.6"
 gem "open4",                          "~>1.3.0",       :require => false
 gem "ovirt-engine-sdk",               "~>4.1.4",       :require => false # Required by the oVirt provider
-gem "ovirt_metrics",                  "~>1.4.1",       :require => false
-gem "pg-pglogical",                   "~>1.1.0",       :require => false
+gem "ovirt_metrics",                  "~>2.0.0",       :require => false
+gem "pg-pglogical",                   "~>1.1.1",       :require => false
 gem "puma",                           "~>3.3.0"
 gem "query_relation",                 "~>0.1.0",       :require => false
 gem "rails",                          "~>5.0.2"
@@ -118,7 +119,7 @@ end
 unless ENV["APPLIANCE"]
   group :development do
     gem "haml_lint",        "~>0.20.0", :require => false
-    gem "rubocop",          "~>0.47.0", :require => false
+    gem "rubocop",          "~>0.52.1", :require => false
     gem "scss_lint",        "~>0.48.0", :require => false
   end
 
@@ -163,7 +164,10 @@ end
 #   developers may not need or may not easily install, such as rails-dev-boost,
 #   any git based gem, and compiled gems like rbtrace or memprof.
 dev_gemfile = File.expand_path("Gemfile.dev.rb", __dir__)
-eval_gemfile(dev_gemfile) if File.exist?(dev_gemfile)
+if File.exist?(dev_gemfile)
+  Bundler::UI::Shell.new.warn "** Gemfile.dev.rb deprecated, please move it to bundler.d/"
+  eval_gemfile(dev_gemfile)
+end
 
 # Load other additional Gemfiles
-Dir.glob("bundler.d/*.rb").each { |f| eval_gemfile(File.expand_path(f, __dir__)) }
+Dir.glob(File.join(__dir__, 'bundler.d/*.rb')).each { |f| eval_gemfile(File.expand_path(f, __dir__)) }

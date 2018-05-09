@@ -33,7 +33,6 @@ class Host < ApplicationRecord
   }.freeze
 
   validates_presence_of     :name
-  validates_uniqueness_of   :name
   validates_inclusion_of    :user_assigned_os, :in => ["linux_generic", "windows_generic", nil]
   validates_inclusion_of    :vmm_vendor, :in => VENDOR_TYPES.keys
 
@@ -423,7 +422,7 @@ class Host < ApplicationRecord
   end
 
   def exit_maint_mode
-    msg = validate_enter_maint_mode
+    msg = validate_exit_maint_mode
     if msg[:available] && respond_to?(:vim_exit_maintenance_mode)
       check_policy_prevent("request_host_exit_maintenance_mode", "vim_exit_maintenance_mode")
     else

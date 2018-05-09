@@ -885,6 +885,9 @@
       - NODE_INVALIDDISKCAPACITY
       :detail: []
       :name: Storage
+    :update:
+      :detail: []
+      :name: Update
   :task_final_events:
     :ClusterCreatedEvent:
     - CreateClusterEx
@@ -1026,6 +1029,10 @@
   :level_websocket_in_evm: error
   :level_vcloud: info
   :level_vcloud_in_evm: error
+:notifications:
+  :history:
+    :purge_window_size: 1000
+    :keep_notifications: 1.week
 :management_system:
   :power_operation_expiration: 10.minutes
 :performance:
@@ -1104,9 +1111,11 @@
   :heartbeat_frequency: 30.seconds
   :host:
   :listening_port: '443'
+  :memory_threshold: 2.gigabytes
   :mks_classid: 338095E4-1806-4BA3-AB51-38A3179200E9
   :mks_version: 2.1.0.0
   :monitor_poll: 5.seconds
+  :monitor_server_roles_timeout: 5.minutes
   :name: EVM
   :prefetch_max_per_worker: 10
   :prefetch_max_per_worker_dequeue: 100
@@ -1154,7 +1163,6 @@
   :host: localhost
   :password: ''
   :port: '25'
-  :recipient_address_byte_limit: 100
   :user_name: evmadmin
 :snapshots:
   :create_free_percent: 100
@@ -1388,6 +1396,7 @@
         :memory_threshold: 2.gigabytes
         :queue_timeout: 20.minutes
         :restart_interval: 6.hours
+        :heartbeat_thread_shutdown_timeout: 10.seconds
       :storage_metrics_collector_worker:
         :count: 2
         :nice_delta: 3
@@ -1417,6 +1426,7 @@
       :log_database_statistics_interval: 1.days
       :memory_threshold: 500.megabytes
       :nice_delta: 3
+      :notifications_purge_interval: 1.day
       :orchestration_stack_retired_interval: 10.minutes
       :performance_collection_interval: 3.minutes
       :performance_collection_start_delay: 5.minutes

@@ -25,6 +25,11 @@ RSpec.describe "users API" do
   let(:user1) { FactoryGirl.create(:user, sample_user1.except(:group).merge(:miq_groups => [group1])) }
   let(:user2) { FactoryGirl.create(:user, sample_user2.except(:group).merge(:miq_groups => [group2])) }
 
+  before do
+    @user.miq_groups << group1
+    @user.miq_groups << group2
+  end
+
   context "with an appropriate role" do
     it "can change the user's password" do
       api_basic_authorize action_identifier(:users, :edit)
@@ -38,7 +43,7 @@ RSpec.describe "users API" do
 
     it "can change another user's password" do
       api_basic_authorize action_identifier(:users, :edit)
-      user = FactoryGirl.create(:user)
+      user = FactoryGirl.create(:user, :miq_groups => [group1], :current_group => group1)
 
       expect do
         run_post users_url(user.id), gen_request(:edit, :password => "new_password")
@@ -187,6 +192,27 @@ RSpec.describe "users API" do
   end
 
   describe "users edit" do
+    it "does not allow edits of current_user" do
+      api_basic_authorize collection_action_identifier(:users, :edit)
+
+      request = {
+        "action"    => "edit",
+        "resources" => [{
+          "href"          => users_url(user1.id),
+          "current_group" => {}
+        }]
+      }
+      run_post(users_url, request)
+
+      expected = {
+        'error' => a_hash_including(
+          'message' => "Invalid attribute(s) current_group specified for a user"
+        )
+      }
+      expect(response).to have_http_status(:bad_request)
+      expect(response.parsed_body).to include(expected)
+    end
+
     it "rejects user edits without appropriate role" do
       api_basic_authorize
 
@@ -319,8 +345,9 @@ RSpec.describe "users API" do
   end
 
   describe "tags subcollection" do
+    let(:user) { FactoryGirl.create(:user, :miq_groups => [group1], :current_group => group1) }
+
     it "can list a user's tags" do
-      user = FactoryGirl.create(:user)
       FactoryGirl.create(:classification_department_with_tags)
       Classification.classify(user, "department", "finance")
       api_basic_authorize
@@ -332,7 +359,6 @@ RSpec.describe "users API" do
     end
 
     it "can assign a tag to a user" do
-      user = FactoryGirl.create(:user)
       FactoryGirl.create(:classification_department_with_tags)
       api_basic_authorize(subcollection_action_identifier(:users, :tags, :assign))
 
@@ -353,7 +379,6 @@ RSpec.describe "users API" do
     end
 
     it "can unassign a tag from a user" do
-      user = FactoryGirl.create(:user)
       FactoryGirl.create(:classification_department_with_tags)
       Classification.classify(user, "department", "finance")
       api_basic_authorize(subcollection_action_identifier(:users, :tags, :unassign))

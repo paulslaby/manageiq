@@ -99,12 +99,12 @@ class ManageIQ::Providers::Openstack::CloudManager < ManageIQ::Providers::CloudM
 
   def cinder_service
     vs = openstack_handle.detect_volume_service
-    vs.name == :cinder ? vs : nil
+    vs&.name == :cinder ? vs : nil
   end
 
   def swift_service
     vs = openstack_handle.detect_storage_service
-    vs.name == :swift ? vs : nil
+    vs&.name == :swift ? vs : nil
   end
 
   def self.ems_type
@@ -340,13 +340,13 @@ class ManageIQ::Providers::Openstack::CloudManager < ManageIQ::Providers::CloudM
     raise
   end
 
-  def vm_attach_volume(vm, volume_id, device = nil)
-    volume = find_by_id_filtered(CloudVolume, volume_id)
-    volume.raw_attach_volume(vm.ems_ref, device)
+  def vm_attach_volume(vm, options)
+    volume = CloudVolume.find_by(:id => options[:volume_id])
+    volume.raw_attach_volume(vm.ems_ref, options[:device])
   end
 
-  def vm_detach_volume(vm, volume_id)
-    volume = find_by_id_filtered(CloudVolume, volume_id)
+  def vm_detach_volume(vm, options)
+    volume = CloudVolume.find_by(:id => options[:volume_id])
     volume.raw_detach_volume(vm.ems_ref)
   end
 
